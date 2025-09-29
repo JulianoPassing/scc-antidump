@@ -52,7 +52,12 @@ def extrair_metadados_json(texto):
 
 def e_log_drop_pickup(texto):
     """Verifica se a mensagem é uma log de Drop ou Pickup"""
-    return texto.strip().startswith(('Drop', 'Pickup'))
+    # Verifica formato antigo (Drop/Pickup)
+    if texto.strip().startswith(('Drop', 'Pickup')):
+        return True
+    
+    # Verifica formato novo (O jogador **nome** **pegou/deixou**)
+    return ('**pegou**' in texto or '**deixou**' in texto) and 'O jogador **' in texto
 
 def extrair_info_log(texto):
     """Extrai informações principais da log (tipo, jogador, item, metadados)"""
@@ -61,15 +66,32 @@ def extrair_info_log(texto):
         return None
     
     primeira_linha = linhas[0]
-    tipo = primeira_linha.split()[0] if primeira_linha else None
     
-    # Extrai nome do jogador
-    match_jogador = re.search(r'O jogador (\w+)', primeira_linha)
-    jogador = match_jogador.group(1) if match_jogador else None
+    # Para formato antigo (Drop/Pickup)
+    if primeira_linha.startswith(('Drop', 'Pickup')):
+        tipo = primeira_linha.split()[0] if primeira_linha else None
+        match_jogador = re.search(r'O jogador (\w+)', primeira_linha)
+        jogador = match_jogador.group(1) if match_jogador else None
+        match_item = re.search(r'item (\w+)', primeira_linha)
+        item = match_item.group(1) if match_item else None
     
-    # Extrai nome do item - agora pega o item antes do "x1" ou "x"
-    match_item = re.search(r'item (\w+)', primeira_linha)
-    item = match_item.group(1) if match_item else None
+    # Para formato novo (O jogador **nome** **pegou/deixou**)
+    else:
+        # Extrai tipo de ação
+        if '**pegou**' in primeira_linha:
+            tipo = 'Pickup'
+        elif '**deixou**' in primeira_linha:
+            tipo = 'Drop'
+        else:
+            tipo = 'Unknown'
+        
+        # Extrai nome do jogador (formato **nome**)
+        match_jogador = re.search(r'O jogador \*\*([^*]+)\*\*', primeira_linha)
+        jogador = match_jogador.group(1) if match_jogador else None
+        
+        # Extrai nome do item (formato **item**)
+        match_item = re.search(r'item \*\*([^*]+)\*\*', primeira_linha)
+        item = match_item.group(1) if match_item else None
     
     # Extrai metadados
     metadados = extrair_metadados_json(primeira_linha)
