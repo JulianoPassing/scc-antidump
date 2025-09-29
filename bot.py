@@ -17,10 +17,35 @@ ALERT_CHANNEL_ID = 1422269418720989204  # Canal para enviar alertas de metadados
 
 # Lista de itens que devem ter metadados completos
 ITEMS_MONITORADOS = [
+    # Materiais básicos
     'ferro_fundido', 'ferro_fundido_pesado', 'aluminio_forjado', 'aluminio_forjado_leve',
     'billet', 'magnesio', 'aco_fundido_leve', 'aco_fundido', 'aco_forjado_pesado',
     'aco_fundido_pesado', 'aluminio_forjado_leve', 'tarugo_aco', 'aluminio_forjado',
-    'aluminio', 'titanio', 'aco_forjado'
+    'aluminio', 'titanio', 'aco_forjado',
+    
+    # Peças específicas - Escape
+    'escape_aco_fundido_leve', 'escape_aluminio', 'escape_titanio',
+    
+    # Peças específicas - Biela
+    'biela_aco_fundido_leve', 'biela_aco_fundido', 'biela_aco_fundido_pesado',
+    'biela_aluminio_forjado_leve', 'biela_aluminio_forjado', 'biela_titanio',
+    
+    # Peças específicas - Cabeçote
+    'cabecote_ferro_fundido', 'cabecote_aluminio', 'cabecote_aco_forjado',
+    
+    # Peças específicas - Virabrequim
+    'virabrequim_ferro_fundido', 'virabrequim_ferro_fundido_pesado', 'virabrequim_aco_forjado_leve',
+    'virabrequim_aco_forjado', 'virabrequim_aco_forjado_pesado', 'virabrequim_tarugo_aco',
+    'virabrequim_billet',
+    
+    # Peças específicas - Pistão
+    'pistao_aco_fundido_leve', 'pistao_aco_fundido', 'pistao_aco_fundido_pesado',
+    'pistao_aluminio_forjado_leve', 'pistao_aluminio_forjado',
+    
+    # Peças específicas - Bloco
+    'bloco_inline_3', 'bloco_inline_4', 'bloco_inline_5', 'bloco_inline_6',
+    'bloco_v_6', 'bloco_v_8', 'bloco_v_10', 'bloco_v_12',
+    'bloco_boxer_4', 'bloco_boxer_6'
 ]
 
 intents = discord.Intents.default()
