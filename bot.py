@@ -120,6 +120,14 @@ async def processar_mensagem_log(message, historico=False):
     """Processa uma mensagem de log - usado tanto para mensagens novas quanto históricas"""
     # Obtém o conteúdo da mensagem
     conteudo = message.content.strip()
+    
+    # Se não tem conteúdo, tenta extrair dos embeds
+    if not conteudo and message.embeds:
+        for embed in message.embeds:
+            if embed.description:
+                conteudo = embed.description
+                break
+    
     print(f"🔍 CONTEÚDO A SER PROCESSADO: '{conteudo}'")
     
     # Verifica se é uma log de Drop ou Pickup
@@ -248,9 +256,25 @@ async def on_message(message):
         print("❌ Mensagem ignorada - não atende aos critérios")
         return
 
-    # Verifica se a mensagem tem conteúdo
-    if not message.content.strip():
-        print("❌ Mensagem vazia - ignorando")
+    # Verifica se a mensagem tem conteúdo ou embeds
+    conteudo_mensagem = message.content.strip()
+    
+    # Se não tem conteúdo, tenta extrair dos embeds
+    if not conteudo_mensagem and message.embeds:
+        print("🔍 Extraindo conteúdo dos embeds...")
+        for embed in message.embeds:
+            print(f"   Embed title: {embed.title}")
+            print(f"   Embed description: {embed.description}")
+            print(f"   Embed fields: {len(embed.fields)}")
+            
+            # Tenta extrair o conteúdo do embed
+            if embed.description:
+                conteudo_mensagem = embed.description
+                print(f"✅ Conteúdo extraído do embed: {conteudo_mensagem[:100]}...")
+                break
+    
+    if not conteudo_mensagem:
+        print("❌ Mensagem vazia e sem embeds - ignorando")
         return
 
     print("✅ Mensagem atende aos critérios - processando...")
