@@ -39,9 +39,15 @@ def extrair_metadados_json(texto):
             json_str = match.group(1)
             # Corrige aspas simples para aspas duplas para JSON válido
             json_str = json_str.replace("'", '"')
-            return json.loads(json_str)
-    except (json.JSONDecodeError, AttributeError):
-        pass
+            print(f"🔍 JSON extraído: {json_str}")
+            result = json.loads(json_str)
+            print(f"✅ JSON parseado com sucesso: {result}")
+            return result
+        else:
+            print(f"❌ Nenhum match encontrado para metadados no texto: {texto}")
+    except (json.JSONDecodeError, AttributeError) as e:
+        print(f"❌ Erro ao parsear JSON: {e}")
+        print(f"   Texto: {texto}")
     return None
 
 def e_log_drop_pickup(texto):
@@ -78,22 +84,36 @@ def extrair_info_log(texto):
 
 def verificar_metadados_incompletos(item, metadados):
     """Verifica se os metadados estão incompletos para um item monitorado"""
+    print(f"🔍 Verificando item: {item}")
+    print(f"🔍 Metadados: {metadados}")
+    print(f"🔍 Item está na lista monitorada: {item in ITEMS_MONITORADOS}")
+    
     if item not in ITEMS_MONITORADOS:
+        print(f"❌ Item {item} não está na lista de monitorados")
         return False
     
     if not metadados:
+        print(f"❌ Sem metadados - INCOMPLETO")
         return True
     
     # Verifica se tem apenas 'rarity' (metadados incompletos)
     chaves = set(metadados.keys())
+    print(f"🔍 Chaves encontradas: {chaves}")
+    
     if chaves == {'rarity'}:
+        print(f"🚨 APENAS RARITY - METADADOS INCOMPLETOS!")
         return True
     
     # Verifica se não tem campos essenciais de qualidade
     campos_essenciais = {'quality', 'quality_percent', 'forged_by', 'forged_at'}
-    if not campos_essenciais.intersection(chaves):
+    campos_encontrados = campos_essenciais.intersection(chaves)
+    print(f"🔍 Campos essenciais encontrados: {campos_encontrados}")
+    
+    if not campos_encontrados:
+        print(f"🚨 SEM CAMPOS ESSENCIAIS - METADADOS INCOMPLETOS!")
         return True
     
+    print(f"✅ Metadados completos")
     return False
 
 async def processar_mensagem_log(message, historico=False):
@@ -205,12 +225,22 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    # Debug: Mostra todas as mensagens recebidas
+    print(f"🔍 MENSAGEM RECEBIDA:")
+    print(f"   Canal ID: {message.channel.id}")
+    print(f"   Autor ID: {message.author.id}")
+    print(f"   Conteúdo: {message.content[:100]}...")
+    print(f"   Canal correto: {message.channel.id == TARGET_CHANNEL_ID}")
+    print(f"   Usuário correto: {message.author.id == LOG_USER_ID}")
+    
     # Verifica se é no canal correto e do usuário correto
     if (message.author == client.user or 
         message.channel.id != TARGET_CHANNEL_ID or 
         message.author.id != LOG_USER_ID):
+        print("❌ Mensagem ignorada - não atende aos critérios")
         return
 
+    print("✅ Mensagem atende aos critérios - processando...")
     # Processa a mensagem usando a função compartilhada
     await processar_mensagem_log(message, historico=False)
 
