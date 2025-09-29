@@ -120,9 +120,14 @@ async def processar_mensagem_log(message, historico=False):
     """Processa uma mensagem de log - usado tanto para mensagens novas quanto históricas"""
     # Obtém o conteúdo da mensagem
     conteudo = message.content.strip()
+    print(f"🔍 CONTEÚDO A SER PROCESSADO: '{conteudo}'")
     
     # Verifica se é uma log de Drop ou Pickup
-    if not e_log_drop_pickup(conteudo):
+    is_drop_pickup = e_log_drop_pickup(conteudo)
+    print(f"🔍 É Drop/Pickup? {is_drop_pickup}")
+    
+    if not is_drop_pickup:
+        print("❌ Não é uma log de Drop/Pickup - ignorando")
         return False
     
     prefix = "📚 [HISTÓRICO]" if historico else "📋"
@@ -229,7 +234,8 @@ async def on_message(message):
     print(f"🔍 MENSAGEM RECEBIDA:")
     print(f"   Canal ID: {message.channel.id}")
     print(f"   Autor ID: {message.author.id}")
-    print(f"   Conteúdo: {message.content[:100]}...")
+    print(f"   Conteúdo COMPLETO:")
+    print(f"   '{message.content}'")
     print(f"   Canal correto: {message.channel.id == TARGET_CHANNEL_ID}")
     print(f"   Usuário correto: {message.author.id == LOG_USER_ID}")
     
