@@ -236,6 +236,8 @@ async def on_message(message):
     print(f"   Autor ID: {message.author.id}")
     print(f"   Conteúdo COMPLETO:")
     print(f"   '{message.content}'")
+    print(f"   Tem attachments: {len(message.attachments) > 0}")
+    print(f"   Tem embeds: {len(message.embeds) > 0}")
     print(f"   Canal correto: {message.channel.id == TARGET_CHANNEL_ID}")
     print(f"   Usuário correto: {message.author.id == LOG_USER_ID}")
     
@@ -244,6 +246,11 @@ async def on_message(message):
         message.channel.id != TARGET_CHANNEL_ID or 
         message.author.id != LOG_USER_ID):
         print("❌ Mensagem ignorada - não atende aos critérios")
+        return
+
+    # Verifica se a mensagem tem conteúdo
+    if not message.content.strip():
+        print("❌ Mensagem vazia - ignorando")
         return
 
     print("✅ Mensagem atende aos critérios - processando...")
