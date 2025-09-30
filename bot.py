@@ -163,6 +163,18 @@ def verificar_metadados_incompletos(item, metadados):
     print(f"✅ Metadados completos")
     return False
 
+def verificar_quality_1_0(item, metadados):
+    """Verifica se o item tem quality 1.0"""
+    if not metadados:
+        return False
+    
+    quality = metadados.get('quality')
+    if quality == 1.0:
+        print(f"🎯 QUALITY 1.0 DETECTADA! Item: {item}")
+        return True
+    
+    return False
+
 async def processar_mensagem_log(message, historico=False):
     """Processa uma mensagem de log - usado tanto para mensagens novas quanto históricas"""
     # Obtém o conteúdo da mensagem
@@ -198,18 +210,21 @@ async def processar_mensagem_log(message, historico=False):
     item = info_log['item']
     
     # Verifica se é um item monitorado com metadados incompletos
-    if verificar_metadados_incompletos(item, metadados):
+    metadados_incompletos = verificar_metadados_incompletos(item, metadados)
+    quality_1_0 = verificar_quality_1_0(item, metadados)
+    
+    # Prepara informações comuns para os alertas
+    rarity = metadados.get('rarity', 'N/A') if metadados else 'N/A'
+    quality_info = f"Quality: {metadados.get('quality', 'N/A')}" if metadados and 'quality' in metadados else "❌ Sem qualidade"
+    timestamp_msg = f"🕐 **Timestamp:** {message.created_at.strftime('%d/%m/%Y %H:%M:%S')}\n" if historico else ""
+    
+    # Envia alerta para metadados incompletos
+    if metadados_incompletos:
         print(f"🚨 METADADOS INCOMPLETOS DETECTADOS!")
         print(f"Jogador: {info_log['jogador']}")
         print(f"Item: {item}")
         print(f"Tipo: {info_log['tipo']}")
         print(f"Metadados: {metadados}")
-        
-        # Prepara mensagem de alerta
-        rarity = metadados.get('rarity', 'N/A') if metadados else 'N/A'
-        quality_info = f"Quality: {metadados.get('quality', 'N/A')}" if metadados and 'quality' in metadados else "❌ Sem qualidade"
-        
-        timestamp_msg = f"🕐 **Timestamp:** {message.created_at.strftime('%d/%m/%Y %H:%M:%S')}\n" if historico else ""
         
         alert_message = (
             f"@everyone 🚨 **METADADOS INCOMPLETOS DETECTADOS!** 🚨\n\n"
@@ -228,12 +243,45 @@ async def processar_mensagem_log(message, historico=False):
             alert_channel = client.get_channel(ALERT_CHANNEL_ID)
             if alert_channel:
                 await alert_channel.send(alert_message)
-                print(f"✅ Alerta enviado para canal: {ALERT_CHANNEL_ID}")
+                print(f"✅ Alerta de metadados incompletos enviado para canal: {ALERT_CHANNEL_ID}")
             else:
                 print(f"❌ Canal de alerta não encontrado: {ALERT_CHANNEL_ID}")
         except Exception as e:
-            print(f"❌ ERRO ao enviar alerta: {e}")
+            print(f"❌ ERRO ao enviar alerta de metadados incompletos: {e}")
+    
+    # Envia alerta para quality 1.0
+    if quality_1_0:
+        print(f"🎯 QUALITY 1.0 DETECTADA!")
+        print(f"Jogador: {info_log['jogador']}")
+        print(f"Item: {item}")
+        print(f"Tipo: {info_log['tipo']}")
+        print(f"Metadados: {metadados}")
         
+        alert_message_quality = (
+            f"@everyone 🎯 **QUALITY 1.0 DETECTADA!** 🎯\n\n"
+            f"👤 **Jogador:** {info_log['jogador']}\n"
+            f"📦 **Item:** {item}\n"
+            f"💎 **Raridade:** {rarity}\n"
+            f"⚡ **Ação:** {info_log['tipo']}\n"
+            f"🔍 **Quality:** 1.0 (VERIFICAR!)\n"
+            f"✨ **Status:** Item sem qualidade!\n"
+            f"{timestamp_msg}"
+            f"\n```{conteudo[:500]}```"
+        )
+        
+        # Envia alerta de quality 1.0
+        try:
+            alert_channel = client.get_channel(ALERT_CHANNEL_ID)
+            if alert_channel:
+                await alert_channel.send(alert_message_quality)
+                print(f"✅ Alerta de quality 1.0 enviado para canal: {ALERT_CHANNEL_ID}")
+            else:
+                print(f"❌ Canal de alerta não encontrado: {ALERT_CHANNEL_ID}")
+        except Exception as e:
+            print(f"❌ ERRO ao enviar alerta de quality 1.0: {e}")
+    
+    # Retorna True se houve algum alerta
+    if metadados_incompletos or quality_1_0:
         return True
     else:
         if item in ITEMS_MONITORADOS:
@@ -249,7 +297,10 @@ async def on_ready():
     print(f'📺 Canal de logs: {TARGET_CHANNEL_ID}')
     print(f'👤 Usuário de logs: {LOG_USER_ID}')
     print(f'🚨 Canal de alertas: {ALERT_CHANNEL_ID}')
-    print(f'🔍 Monitorando {len(ITEMS_MONITORADOS)} itens para metadados incompletos:')
+    print(f'🔍 Monitorando {len(ITEMS_MONITORADOS)} itens para:')
+    print(f'   - Metadados incompletos')
+    print(f'   - Quality 1.0 (perfeita)')
+    print(f'📋 Itens monitorados:')
     for item in ITEMS_MONITORADOS:
         print(f'   - {item}')
     print(f'✅ Bot online!')
@@ -260,7 +311,8 @@ async def on_ready():
         channel = client.get_channel(TARGET_CHANNEL_ID)
         if channel:
             count_processadas = 0
-            count_quality_10 = 0
+            count_metadados_incompletos = 0
+            count_quality_1_0 = 0
             
             # Pega as últimas 100 mensagens do canal
             async for message in channel.history(limit=100):
@@ -269,13 +321,20 @@ async def on_ready():
                     count_processadas += 1
                     resultado = await processar_mensagem_log(message, historico=True)
                     if resultado:
-                        count_quality_10 += 1
+                        # Conta separadamente metadados incompletos e quality 1.0
+                        if message.content and 'metadados' in message.content.lower():
+                            metadados = extrair_metadados_json(message.content)
+                            if metadados and metadados.get('quality') == 1.0:
+                                count_quality_1_0 += 1
+                            else:
+                                count_metadados_incompletos += 1
                     # Pequeno delay para evitar rate limits
                     await asyncio.sleep(0.1)
             
             print(f'📊 Verificação concluída:')
             print(f'   - {count_processadas} logs processadas')
-            print(f'   - {count_quality_10} itens com metadados incompletos encontrados')
+            print(f'   - {count_metadados_incompletos} itens com metadados incompletos encontrados')
+            print(f'   - {count_quality_1_0} itens com quality 1.0 encontrados')
         else:
             print(f'❌ Canal {TARGET_CHANNEL_ID} não encontrado!')
     except Exception as e:
